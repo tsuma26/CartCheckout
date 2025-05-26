@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # Spring Boot Application Service
+  shopping-cart-service:
+    build:
+      context: . # Build context is the current directory where Dockerfile is located
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080" # Map host port 8080 to container port 8080
+    environment:
+      # Pass MongoDB and Redis connection details as environment variables
+      # These will override the values in application.properties when running in Docker
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/shopping_cart_db
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+    depends_on:
+      - mongodb # Ensure MongoDB is up before starting the Spring Boot app
+      - redis   # Ensure Redis is up before starting the Spring Boot app
+    networks:
+      - shopping_cart_network # Connect to a custom network
+
+  # MongoDB Service
+  mongodb:
+    image: mongo:latest # Use the latest official MongoDB image
+    ports:
+      - "27017:27017" # Map host port 27017 to container port 27017
+    volumes:
+      - mongodb_data:/data/db # Persist MongoDB data in a named volume
+    networks:
+      - shopping_cart_network # Connect to a custom network
+
+  # Redis Service
+  redis:
+    image: redis:latest # Use the latest official Redis image
+    ports:
+      - "6379:6379" # Map host port 6379 to container port 6379
+    volumes:
+      - redis_data:/data # Persist Redis data in a named volume
+    networks:
+      - shopping_cart_network # Connect to a custom network
+
+# Define named volumes for data persistence
+volumes:
+  mongodb_data:
+  redis_data:
+
+# Define a custom network for services to communicate
+networks:
+  shopping_cart_network:
+    driver: bridge
